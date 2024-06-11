@@ -31,51 +31,26 @@ class OracleAuthentication:
 auth = OracleAuthentication(**auth_details)
 auth.authenticate()
 
-# product_id = 3526
-# query_url = f"{auth.base_url}/products/{product_id}"
 
-# data = requests.get(
-#     query_url.format(product_id=product_id),
-#     headers={"Authorization": f"Bearer {auth.access_token}"},
-# )
-# print(json.dumps(data.json(), indent=2))
+def query_product(product_id, auth):
+    query_url = f"{auth.base_url}/products/{product_id}"
+    data = requests.get(
+        query_url.format(product_id=product_id),
+        headers={"Authorization": f"Bearer {auth.access_token}"},
+    )
+    return data.json()
 
-# Insert into staging
-data_to_insert = {
-    "article_number": "BART/000000000050676869",
-    "corresponding_article_number": "ABS-0107b075",
-    "basf_bi_number": "993285",
-    "cobalt_number": "50676869",
-    "product_description": "Ultrafuse® ABS Green 2.85mm 750G 4G",
-    "isactive": "Y",
-    "quantity_per_unit": "1",
-    "packaging_size_per_unit": "0.75",
-    "packaging_size_uom": "kg",
-    "status": "Commercial",
-    "salesforce_number": "01t6N000002mYQAQA2",
-    "global_item_code": "8100010",
-    "business_line": "Additive Extrusion Solutions (AES)",
-    "product_subfamily": "ABS",
-    "technologies": "Plastic Filament",
-    "controlling_group": "AES Standard",
-    "brand": "Ultrafuse®",
-    "color": "Green",
-    "source_system": "Cobalt",
-    "product_region": "EMEA",
-    "production_location_status": "Central",
-    "diameter": "2.85",
-    "quantity_uom": "Spool",
-}
 
-insert_url = f"{auth.base_url}/products/insert_staging"
+def insert_product(auth, data_to_insert):
+    insert_url = f"{auth.base_url}/products/insert_staging"
+    data = requests.post(
+        insert_url,
+        headers={"Authorization": f"Bearer {auth.access_token}", **data_to_insert},
+    )
+    return data.json()
 
-data = requests.post(
-    insert_url,
-    headers={"Authorization": f"Bearer {auth.access_token}", **data_to_insert},
-)
 
-load_items_url = f"{auth.base_url}/products/load_items"
-requests.post(
-    load_items_url,
-    headers={"Authorization": f"Bearer {auth.access_token}"},
-)
+with open("data_to_insert.json", "r") as file:
+    data_to_insert = json.loads(file.read())
+
+# insert_product(auth, data_to_insert)
