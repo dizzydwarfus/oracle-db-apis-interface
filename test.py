@@ -13,7 +13,7 @@ auth_details = {
 
 
 class OracleAuthentication:
-    def __init__(self, url, client_id, client_password):
+    def __init__(self, url: str, client_id: str, client_password: str):
         self.client_id = client_id
         self.client_password = client_password
         self.base_url = url
@@ -32,7 +32,7 @@ auth = OracleAuthentication(**auth_details)
 auth.authenticate()
 
 
-def query_product(product_id, auth):
+def query_product(product_id: str, auth: OracleAuthentication):
     query_url = f"{auth.base_url}/products/{product_id}"
     data = requests.get(
         query_url.format(product_id=product_id),
@@ -41,14 +41,21 @@ def query_product(product_id, auth):
     return data.json()
 
 
-def insert_product(auth, data_to_insert):
+def insert_product(auth: OracleAuthentication, data_to_insert: dict):
     insert_url = f"{auth.base_url}/products/insert_staging"
     data = requests.post(
         insert_url,
         headers={"Authorization": f"Bearer {auth.access_token}", **data_to_insert},
     )
-    return data.json()
+    return data
 
+def load_items(auth: OracleAuthentication):
+    query_url = f"{auth.base_url}/products/load_items"
+    data = requests.post(
+        query_url,
+        headers={"Authorization": f"Bearer {auth.access_token}"},
+    )
+    return data
 
 with open("data_to_insert.json", "r") as file:
     data_to_insert = json.loads(file.read())
