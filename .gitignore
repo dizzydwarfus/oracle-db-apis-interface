@@ -5,3 +5,5 @@ data_to_insert.json
 *.xlsx
 *.log
 _globals.py
+mock_data/
+__pycache__/
