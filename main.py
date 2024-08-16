@@ -1,6 +1,7 @@
 # %%
 # Built-in Imports
 import os
+import json
 
 # Third Party Imports
 from dotenv import load_dotenv
@@ -9,7 +10,7 @@ import pandas as pd
 # Local Imports
 from _globals import PRODUCT_COLUMN_MAPPING, ENDPOINTS
 from utils.auth import OracleAuthentication
-from OracleAPI import OracleAPI
+from utils.OracleAPI import OracleAPI
 
 load_dotenv()
 
@@ -23,7 +24,7 @@ auth = OracleAuthentication(**auth_details)
 auth.authenticate()
 
 oracle_api = OracleAPI(auth, ENDPOINTS)
-
+load_object = "products"
 # use pydantic to validate csv or json data to make sure column names and data types are correct
 
 # %% Process data to be loaded
@@ -38,12 +39,21 @@ df.to_csv(
     formatted_csv_data, index=False, encoding="utf-8"
 )  # only encoding utf-8 is supported
 
-response = oracle_api.batch_load(
-    load_object="products",
+# %% Load data (same for customers and facts)
+
+batch_load = oracle_api.batch_load(
+    load_object=load_object,
     csv_file_path=formatted_csv_data,
 )
-print(response.text)
+print(batch_load.text)
+
+# %% Execute load (same for customers and facts)
+execute_load = oracle_api.execute_load(load_object=load_object)
+oracle_api.errors["procedure_error"]
 
 # %%
-load_execution_response = oracle_api.execute_load(load_object="products")
+
+delete_staging = oracle_api.delete_staging_table(table_name=load_object)
+json.loads(delete_staging.text)
+
 # %%

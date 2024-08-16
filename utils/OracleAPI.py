@@ -9,6 +9,12 @@ class OracleAPI:
     def __init__(self, auth: OracleAuthentication, endpoints: dict):
         self.auth = auth
         self.endpoints = endpoints
+        self.response = {
+            "procedure_response": {},
+            "query_response": {},
+            "batch_load_response": {},
+            "deletion_response": {},
+        }
         self.errors = {
             "procedure_error": [],
             "query_error": [],
@@ -22,24 +28,24 @@ class OracleAPI:
         query_url = (
             f"{self.auth.base_url}/{self.endpoints['get_query'][query_object]['url']}"
         )
-        response = requests.get(
+        self.response["query_response"][query_object] = requests.get(
             query_url.format(query_id=query_id),
             headers={
                 "Authorization": f"Bearer {self.auth.access_token}",
             },
         )
-        return response.json()
 
     def batch_load(
         self, load_object: Literal["products", "customers", "facts"], csv_file_path: str
     ):
-        insert_url = (
-            f"{self.auth.base_url}{self.endpoints['batch_load'][load_object]['url']}"
+        api_url = self.endpoints["batch_load"][load_object]["url"].format(
+            base_url=self.auth.base_url
         )
+        print(api_url)
         with open(csv_file_path, "rb") as csv_file:
             data = csv_file.read()
-            response = requests.post(
-                insert_url,
+            self.response["batch_load_response"][load_object] = requests.post(
+                api_url,
                 headers={
                     "Authorization": f"Bearer {self.auth.access_token}",
                     "Content-Type": self.endpoints["batch_load"][load_object][
@@ -48,19 +54,39 @@ class OracleAPI:
                 },
                 data=data,
             )
-        return response
+        return self.response["batch_load_response"][load_object]
 
     def execute_load(self, load_object: Literal["products", "customers", "facts"]):
-        insert_url = (
-            f"{self.auth.base_url}{self.endpoints['execute_load'][load_object]['url']}"
+        api_url = self.endpoints["execute_load"][load_object]["url"].format(
+            base_url=self.auth.base_url
         )
-        response = requests.post(
-            insert_url,
+        print(api_url)
+        self.response["procedure_response"][load_object] = requests.post(
+            api_url,
+            headers={
+                "Authorization": f"Bearer {self.auth.access_token}",
+                # "Content-Type": self.endpoints["execute_load"][load_object]["headers"][
+                #     "Content-Type"
+                # ],
+            },
+        )
+        # self.check_load_error(self.response["procedure_response"][load_object])
+
+        return self.response["procedure_response"][load_object]
+
+    def delete_staging_table(
+        self, table_name: Literal["products", "customers", "facts"]
+    ):
+        api_url = self.endpoints["delete_staging"][table_name]["url"].format(
+            base_url=self.auth.base_url
+        )
+        self.response["deletion_response"][table_name] = requests.post(
+            api_url,
             headers={
                 "Authorization": f"Bearer {self.auth.access_token}",
             },
         )
-        return response
+        return self.response["deletion_response"][table_name]
 
     def check_load_error(self, response):
         """Check if the PL/SQL procedure for loading rows from staging table into production table returned an error
